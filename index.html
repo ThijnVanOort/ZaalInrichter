@@ -56,6 +56,13 @@
       <button type="button" data-template="empty">Lege zaal</button>
 
       <h2>Acties</h2>
+      <div class="action-row">
+        <button type="button" id="undo-btn" disabled title="Ctrl+Z">Stap terug</button>
+        <button type="button" id="redo-btn" disabled title="Ctrl+Y">Stap vooruit</button>
+      </div>
+      <button type="button" id="export-csv">Indeling opslaan (CSV)</button>
+      <button type="button" id="import-csv">Indeling laden (CSV)</button>
+      <input type="file" id="import-csv-input" accept=".csv,text/csv" hidden>
       <button type="button" id="clear-canvas" class="danger">Alle meubels verwijderen</button>
     </aside>
 

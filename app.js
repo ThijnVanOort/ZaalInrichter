@@ -189,18 +189,28 @@ function recordHistory() {
   undoStack.push(serializeState());
   if (undoStack.length > MAX_HISTORY) undoStack.shift();
   redoStack = [];
+  updateHistoryButtons();
 }
 
 function undo() {
   if (undoStack.length === 0) return;
   redoStack.push(serializeState());
   restoreState(undoStack.pop());
+  updateHistoryButtons();
 }
 
 function redo() {
   if (redoStack.length === 0) return;
   undoStack.push(serializeState());
   restoreState(redoStack.pop());
+  updateHistoryButtons();
+}
+
+function updateHistoryButtons() {
+  const undoBtn = document.getElementById("undo-btn");
+  const redoBtn = document.getElementById("redo-btn");
+  if (undoBtn) undoBtn.disabled = undoStack.length === 0;
+  if (redoBtn) redoBtn.disabled = redoStack.length === 0;
 }
 
 function clearSelection() {
@@ -489,6 +499,7 @@ function onItemPointerUp(e) {
     undoStack.push(dragState.historySnapshot);
     if (undoStack.length > MAX_HISTORY) undoStack.shift();
     redoStack = [];
+    updateHistoryButtons();
   }
 
   const item = items.find((i) => i.id === dragState.ids[0]);
@@ -628,6 +639,135 @@ document.getElementById("clear-canvas").addEventListener("click", () => {
   }
 });
 
+function escapeCsvField(value) {
+  const text = String(value ?? "");
+  if (/[",\n\r]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+  return text;
+}
+
+function exportToCsv() {
+  const state = serializeState();
+  const lines = [
+    `# room_title,${escapeCsvField(state.roomTitle)}`,
+    `# layout_subtitle,${escapeCsvField(state.layoutSubtitle)}`,
+    "type,x,y,rotation",
+    ...state.items.map(({ type, x, y, rotation }) =>
+      [type, x, y, rotation || 0].join(",")
+    ),
+  ];
+
+  const blob = new Blob([`${lines.join("\n")}\n`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const filename = `${(state.roomTitle || "zaalindeling").trim() || "zaalindeling"}.csv`;
+  link.href = url;
+  link.download = filename.replace(/[<>:"/\\|?*]+/g, "-");
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function parseCsvLine(line) {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith("#")) {
+    const meta = trimmed.slice(1).trim();
+    const comma = meta.indexOf(",");
+    if (comma === -1) return { meta: null };
+    return { meta: [meta.slice(0, comma).trim(), meta.slice(comma + 1).trim()] };
+  }
+
+  const parts = trimmed.split(",").map((part) => part.trim());
+  if (parts[0] === "type" && parts[1] === "x") return { header: true };
+
+  const [type, x, y, rotation = "0"] = parts;
+  if (!type || Number.isNaN(Number(x)) || Number.isNaN(Number(y))) return null;
+
+  return {
+    item: {
+      type,
+      x: Number(x),
+      y: Number(y),
+      rotation: Number(rotation) || 0,
+    },
+  };
+}
+
+function importFromCsv(text) {
+  const meta = { roomTitle: "", layoutSubtitle: "" };
+  const rows = [];
+
+  text.replace(/^\uFEFF/, "").split(/\r?\n/).forEach((line) => {
+    const parsed = parseCsvLine(line);
+    if (!parsed) return;
+    if (parsed.meta) {
+      const [key, value] = parsed.meta;
+      if (key === "room_title") meta.roomTitle = value;
+      if (key === "layout_subtitle") meta.layoutSubtitle = value;
+      return;
+    }
+    if (parsed.header || !parsed.item) return;
+    rows.push(parsed.item);
+  });
+
+  if (rows.length === 0) {
+    alert("Geen geldige meubels gevonden in het CSV-bestand.");
+    return;
+  }
+
+  recordHistory();
+  clearItems(true);
+  document.getElementById("room-title").value = meta.roomTitle;
+  document.getElementById("layout-subtitle").value = meta.layoutSubtitle;
+  currentExpected = null;
+
+  let skipped = 0;
+  rows.forEach(({ type, x, y, rotation }) => {
+    if (!ASSET_SIZES[type] || type === "door" || type === "desk") {
+      skipped += 1;
+      return;
+    }
+    if (!canAddCornerType(type)) {
+      skipped += 1;
+      return;
+    }
+    const id = nextId++;
+    const item = createItem(type, x, y, id, { rotation });
+    if (item) items.push(item);
+    else skipped += 1;
+  });
+
+  clearSelection();
+  updateCounts();
+
+  if (skipped > 0) {
+    alert(`${rows.length - skipped} item(s) geladen. ${skipped} item(s) overgeslagen (ongeldig type of limiet bereikt).`);
+  }
+}
+
+document.getElementById("undo-btn").addEventListener("click", undo);
+document.getElementById("redo-btn").addEventListener("click", redo);
+document.getElementById("export-csv").addEventListener("click", exportToCsv);
+document.getElementById("import-csv").addEventListener("click", () => {
+  document.getElementById("import-csv-input").click();
+});
+document.getElementById("import-csv-input").addEventListener("change", (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      importFromCsv(String(reader.result || ""));
+    } catch {
+      alert("Het CSV-bestand kon niet worden gelezen.");
+    }
+    e.target.value = "";
+  };
+  reader.readAsText(file, "UTF-8");
+});
+
 renderWalls();
 renderFixedElements();
 loadTemplate(TEMPLATES.standaard, { record: false });
+updateHistoryButtons();
