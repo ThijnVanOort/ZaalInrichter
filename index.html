@@ -13,57 +13,66 @@
   </header>
 
   <div class="app">
-    <aside class="toolbar">
+    <aside class="help-panel">
       <section class="help-box">
         <h2>Hoe werkt het?</h2>
         <ol>
           <li>Kies een <strong>standaard indeling</strong> of begin met een lege zaal</li>
-          <li><strong>Sleep</strong> stoelen en tafels naar de tekening</li>
-          <li><strong>Selecteer</strong> met een klik of door een vak te tekenen</li>
-          <li><strong>Verplaats</strong> geselecteerde items door te slepen</li>
+          <li><strong>Sleep</strong> stoelen en tafels vanuit het palet naar de tekening</li>
+          <li><strong>Selecteer</strong> met een klik of teken een vak; houd Shift ingedrukt voor meerdere items</li>
+          <li><strong>Verplaats</strong> geselecteerde items door te slepen; klik op <strong>×</strong> om te verwijderen</li>
+          <li>Pas de <strong>zaalnaam</strong> en het <strong>indelingstype</strong> bovenaan de tekening aan</li>
+          <li><strong>Sla op</strong> of <strong>laad</strong> een indeling via CSV onder Acties</li>
         </ol>
-        <p class="shortcuts"><strong>Sneltoetsen:</strong> R = draaien · Delete = verwijderen · Ctrl+Z = ongedaan · Ctrl+Y = opnieuw</p>
+
+        <h3 class="help-subtitle">Sneltoetsen</h3>
+        <ul class="shortcut-list">
+          <li class="shortcut-item">
+            <span class="shortcut-keys"><kbd>R</kbd></span>
+            <span class="shortcut-label">Draaien</span>
+          </li>
+          <li class="shortcut-item">
+            <span class="shortcut-keys"><kbd>1</kbd></span>
+            <span class="shortcut-label">Stoel plaatsen</span>
+          </li>
+          <li class="shortcut-item">
+            <span class="shortcut-keys"><kbd>2</kbd></span>
+            <span class="shortcut-label">Tafel plaatsen</span>
+          </li>
+          <li class="shortcut-item">
+            <span class="shortcut-keys"><kbd>3</kbd></span>
+            <span class="shortcut-label">Hoektafel plaatsen</span>
+          </li>
+          <li class="shortcut-item">
+            <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>D</kbd></span>
+            <span class="shortcut-label">Kopiëren</span>
+          </li>
+          <li class="shortcut-item">
+            <span class="shortcut-keys"><kbd>Delete</kbd></span>
+            <span class="shortcut-label">Verwijderen</span>
+          </li>
+          <li class="shortcut-item">
+            <span class="shortcut-keys"><kbd>Esc</kbd></span>
+            <span class="shortcut-label">Deselecteren</span>
+          </li>
+          <li class="shortcut-item">
+            <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span>
+            <span class="shortcut-label">Stap terug</span>
+          </li>
+          <li class="shortcut-item">
+            <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>Y</kbd></span>
+            <span class="shortcut-label">Stap vooruit</span>
+          </li>
+          <li class="shortcut-item">
+            <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>
+            <span class="shortcut-label">Indeling opslaan</span>
+          </li>
+          <li class="shortcut-item">
+            <span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>I</kbd></span>
+            <span class="shortcut-label">Indeling laden</span>
+          </li>
+        </ul>
       </section>
-
-      <h2>Meubels</h2>
-      <p class="hint">Sleep een item naar de tekening</p>
-
-      <div class="palette">
-        <div class="palette-item" draggable="true" data-type="chair" data-label="Stoel">
-          <img src="assets/chair.png" alt="Stoel" width="34" height="34">
-          <span>Stoel</span>
-        </div>
-        <div class="palette-item" draggable="true" data-type="table" data-label="Tafel">
-          <img src="assets/table-h.png" alt="Tafel" width="80" height="24">
-          <span>Tafel</span>
-        </div>
-        <div class="palette-item" draggable="true" data-type="table-corner" data-label="Hoektafel">
-          <img src="assets/table-corner.png" alt="Hoektafel" width="28" height="28">
-          <span>Hoektafel</span>
-        </div>
-      </div>
-
-      <p class="hint fixed-note">Wanden, deuren en het presentatiebureau zijn vast. Maximaal 2 hoektafels per indeling.</p>
-
-      <h2>Standaard indelingen</h2>
-      <p class="hint">Klik om een voorbeeld te laden. Wijzigingen zijn terug te draaien met Ctrl+Z.</p>
-      <button type="button" data-template="standaard" title="16 tafels · 29 stoelen">Standaard (U-vorm)</button>
-      <button type="button" data-template="halfrond" title="13 tafels · 15 stoelen">Halfrond</button>
-      <button type="button" data-template="kring" title="13 tafels · 19 stoelen">Kring</button>
-      <button type="button" data-template="examen" title="15 tafels · 15 stoelen">Examen</button>
-      <button type="button" data-template="workshop" title="8 tafels · 32 stoelen">Workshop</button>
-      <button type="button" data-template="boardroom" title="6 tafels · 16 stoelen">Vergadering</button>
-      <button type="button" data-template="empty">Lege zaal</button>
-
-      <h2>Acties</h2>
-      <div class="action-row">
-        <button type="button" id="undo-btn" disabled title="Ctrl+Z">Stap terug</button>
-        <button type="button" id="redo-btn" disabled title="Ctrl+Y">Stap vooruit</button>
-      </div>
-      <button type="button" id="export-csv">Indeling opslaan (CSV)</button>
-      <button type="button" id="import-csv">Indeling laden (CSV)</button>
-      <input type="file" id="import-csv-input" accept=".csv,text/csv" hidden>
-      <button type="button" id="clear-canvas" class="danger">Alle meubels verwijderen</button>
     </aside>
 
     <main class="workspace">
@@ -85,6 +94,49 @@
         <div id="selection-box" class="selection-box hidden" aria-hidden="true"></div>
       </div>
     </main>
+
+    <aside class="toolbar">
+      <h2>Meubels</h2>
+      <p class="hint">Sleep naar de tekening of druk 1, 2 of 3</p>
+
+      <div class="palette">
+        <div class="palette-item" draggable="true" data-type="chair" data-label="Stoel">
+          <img src="assets/chair.png" alt="Stoel" width="34" height="34">
+          <span>Stoel</span>
+          <kbd class="palette-key">1</kbd>
+        </div>
+        <div class="palette-item" draggable="true" data-type="table" data-label="Tafel">
+          <img src="assets/table-h.png" alt="Tafel" width="80" height="24">
+          <span>Tafel</span>
+          <kbd class="palette-key">2</kbd>
+        </div>
+        <div class="palette-item" draggable="true" data-type="table-corner" data-label="Hoektafel">
+          <img src="assets/table-corner.png" alt="Hoektafel" width="28" height="28">
+          <span>Hoektafel</span>
+          <kbd class="palette-key">3</kbd>
+        </div>
+      </div>
+
+      <h2>Indelingen</h2>
+      <button type="button" data-template="standaard" title="16 tafels · 29 stoelen">Standaard (U-vorm)</button>
+      <button type="button" data-template="halfrond" title="13 tafels · 15 stoelen">Halfrond</button>
+      <button type="button" data-template="kring" title="13 tafels · 19 stoelen">Kring</button>
+      <button type="button" data-template="examen" title="15 tafels · 15 stoelen">Examen</button>
+      <button type="button" data-template="workshop" title="8 tafels · 32 stoelen">Workshop</button>
+      <button type="button" data-template="boardroom" title="6 tafels · 16 stoelen">Vergadering</button>
+      <button type="button" data-template="empty">Lege zaal</button>
+
+      <h2>Acties</h2>
+      <div class="action-row">
+        <button type="button" id="undo-btn" disabled title="Ctrl+Z">Stap terug</button>
+        <button type="button" id="redo-btn" disabled title="Ctrl+Y">Stap vooruit</button>
+      </div>
+      <button type="button" id="copy-btn" disabled title="Ctrl+D">Kopiëren</button>
+      <button type="button" id="export-csv" title="Ctrl+S">Indeling opslaan (CSV)</button>
+      <button type="button" id="import-csv" title="Ctrl+I">Indeling laden (CSV)</button>
+      <input type="file" id="import-csv-input" accept=".csv,text/csv" hidden>
+      <button type="button" id="clear-canvas" class="danger">Alle meubels verwijderen</button>
+    </aside>
   </div>
 
   <script src="templates.js"></script>

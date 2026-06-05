@@ -23,8 +23,6 @@ const ASSET_SIZES = {
   door: { w: 44, h: 52, src: "assets/door.png" },
 };
 
-const CORNER_TYPES = ["table-corner"];
-const MAX_CORNER_PER_LAYOUT = 2;
 const ROTATE_STEP = 90;
 
 const canvas = document.getElementById("canvas");
@@ -149,6 +147,8 @@ function applyVisual(item) {
 function syncSelection() {
   items.forEach((i) => i.el.classList.toggle("selected", selectedIds.has(i.id)));
   updateCounts();
+  const copyBtn = document.getElementById("copy-btn");
+  if (copyBtn) copyBtn.disabled = selectedIds.size === 0;
 }
 
 function serializeState() {
@@ -282,7 +282,7 @@ function createItem(type, x, y, id, options = {}) {
 }
 
 function addItem(type, x, y, options = {}) {
-  if (!canAddCornerType(type) || type === "desk") return null;
+  if (!getAsset(type) || type === "desk") return null;
   recordHistory();
   const id = nextId++;
   const item = createItem(type, x, y, id, options);
@@ -292,6 +292,59 @@ function addItem(type, x, y, options = {}) {
   updateCounts();
   return item;
 }
+
+function copySelected() {
+  if (selectedIds.size === 0) return;
+
+  const sources = [...selectedIds]
+    .map((id) => items.find((i) => i.id === id))
+    .filter(Boolean);
+
+  recordHistory();
+  const offset = GRID * 2;
+  const newIds = [];
+
+  sources.forEach((item) => {
+    const id = nextId++;
+    const copy = createItem(item.type, item.x + offset, item.y + offset, id, {
+      rotation: item.rotation,
+    });
+    if (copy) {
+      items.push(copy);
+      newIds.push(id);
+    }
+  });
+
+  if (newIds.length) setSelection(newIds);
+  else undoStack.pop();
+  updateCounts();
+}
+
+function placeFurniture(type) {
+  if (!getAsset(type) || type === "desk") return;
+
+  const size = getEffectiveSize(type, 0);
+  let x;
+  let y;
+
+  if (selectedIds.size > 0) {
+    const pivot = getSelectionPivot([...selectedIds]);
+    const offset = GRID * 2;
+    x = pivot.cx - size.w / 2 + offset;
+    y = pivot.cy - size.h / 2 + offset;
+  } else {
+    x = ROOM.width / 2 - size.w / 2;
+    y = ROOM.height / 2 - size.h / 2;
+  }
+
+  addItem(type, x, y);
+}
+
+const PALETTE_KEYS = {
+  1: "chair",
+  2: "table",
+  3: "table-corner",
+};
 
 function removeItems(ids) {
   if (ids.length === 0) return;
@@ -314,14 +367,6 @@ function clearItems(skipHistory = false) {
 function getCanvasPoint(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
   return { x: clientX - rect.left, y: clientY - rect.top };
-}
-
-function countCornerItems() {
-  return items.filter((i) => CORNER_TYPES.includes(i.type)).length;
-}
-
-function canAddCornerType(type) {
-  return !CORNER_TYPES.includes(type) || countCornerItems() < MAX_CORNER_PER_LAYOUT;
 }
 
 function getItemCenter(item) {
@@ -411,7 +456,6 @@ canvas.addEventListener("drop", (e) => {
   e.preventDefault();
   const type = e.dataTransfer.getData("text/plain");
   if (!ASSET_SIZES[type] || type === "door" || type === "desk") return;
-  if (!canAddCornerType(type)) return;
   const pt = getCanvasPoint(e.clientX, e.clientY);
   const size = getEffectiveSize(type, 0);
   addItem(type, pt.x - size.w / 2, pt.y - size.h / 2);
@@ -594,6 +638,16 @@ document.addEventListener("keydown", (e) => {
 
   const modKey = e.ctrlKey || e.metaKey;
 
+  if (!modKey && !e.altKey && PALETTE_KEYS[e.key]) {
+    e.preventDefault();
+    placeFurniture(PALETTE_KEYS[e.key]);
+  }
+
+  if (modKey && !e.altKey && (e.key === "d" || e.key === "D") && selectedIds.size > 0) {
+    e.preventDefault();
+    copySelected();
+  }
+
   if (modKey && !e.altKey && (e.key === "z" || e.key === "Z")) {
     e.preventDefault();
     if (e.shiftKey) redo();
@@ -604,10 +658,26 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     redo();
   }
+
+  if (modKey && !e.altKey && (e.key === "s" || e.key === "S")) {
+    e.preventDefault();
+    exportToCsv();
+  }
+
+  if (modKey && !e.altKey && (e.key === "i" || e.key === "I")) {
+    e.preventDefault();
+    triggerImportCsv();
+  }
 });
 
+function setActiveTemplate(key) {
+  document.querySelectorAll("[data-template]").forEach((btn) => {
+    btn.classList.toggle("template-active", key !== null && btn.dataset.template === key);
+  });
+}
+
 function loadTemplate(template, options = {}) {
-  const { record = true } = options;
+  const { record = true, key = null } = options;
   if (record) recordHistory();
   clearItems(true);
   document.getElementById("room-title").value = template.title;
@@ -615,7 +685,6 @@ function loadTemplate(template, options = {}) {
   currentExpected = template.expected || null;
 
   template.items.forEach(({ type, x, y, rotation = 0 }) => {
-    if (!canAddCornerType(type)) return;
     const id = nextId++;
     const item = createItem(type, x, y, id, { rotation });
     if (item) items.push(item);
@@ -623,12 +692,13 @@ function loadTemplate(template, options = {}) {
 
   clearSelection();
   updateCounts();
+  if (key) setActiveTemplate(key);
 }
 
 document.querySelectorAll("[data-template]").forEach((btn) => {
   btn.addEventListener("click", () => {
     const key = btn.dataset.template;
-    if (TEMPLATES[key]) loadTemplate(TEMPLATES[key]);
+    if (TEMPLATES[key]) loadTemplate(TEMPLATES[key], { key });
   });
 });
 
@@ -636,6 +706,7 @@ document.getElementById("clear-canvas").addEventListener("click", () => {
   if (confirm("Weet u zeker dat u alle meubels wilt verwijderen?\n\nWanden, deuren en het presentatiebureau blijven staan. U kunt dit ongedaan maken met Ctrl+Z.")) {
     clearItems();
     currentExpected = null;
+    setActiveTemplate(null);
     updateCounts();
   }
 });
@@ -728,10 +799,6 @@ function importFromCsv(text) {
       skipped += 1;
       return;
     }
-    if (!canAddCornerType(type)) {
-      skipped += 1;
-      return;
-    }
     const id = nextId++;
     const item = createItem(type, x, y, id, { rotation });
     if (item) items.push(item);
@@ -740,18 +807,22 @@ function importFromCsv(text) {
 
   clearSelection();
   updateCounts();
+  setActiveTemplate(null);
 
   if (skipped > 0) {
-    alert(`${rows.length - skipped} item(s) geladen. ${skipped} item(s) overgeslagen (ongeldig type of limiet bereikt).`);
+    alert(`${rows.length - skipped} item(s) geladen. ${skipped} item(s) overgeslagen (ongeldig type).`);
   }
+}
+
+function triggerImportCsv() {
+  document.getElementById("import-csv-input").click();
 }
 
 document.getElementById("undo-btn").addEventListener("click", undo);
 document.getElementById("redo-btn").addEventListener("click", redo);
+document.getElementById("copy-btn").addEventListener("click", copySelected);
 document.getElementById("export-csv").addEventListener("click", exportToCsv);
-document.getElementById("import-csv").addEventListener("click", () => {
-  document.getElementById("import-csv-input").click();
-});
+document.getElementById("import-csv").addEventListener("click", triggerImportCsv);
 document.getElementById("import-csv-input").addEventListener("change", (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -770,5 +841,5 @@ document.getElementById("import-csv-input").addEventListener("change", (e) => {
 
 renderWalls();
 renderFixedElements();
-loadTemplate(TEMPLATES.standaard, { record: false });
+loadTemplate(TEMPLATES.standaard, { record: false, key: "standaard" });
 updateHistoryButtons();
