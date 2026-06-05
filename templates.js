@@ -45,20 +45,75 @@ function workshopTablePair(baseX, baseY) {
   ];
 }
 
-function boardroomStack(baseX, baseY) {
-  const pairH = TABLE_H * 2;
-  return [
-    { type: "table", x: baseX, y: baseY },
-    { type: "table", x: baseX, y: baseY + TABLE_H },
-    { type: "chair", x: baseX + 18, y: baseY - CHAIR_TABLE_GAP, rotation: 180 },
-    { type: "chair", x: baseX + 62, y: baseY - CHAIR_TABLE_GAP, rotation: 180 },
-    { type: "chair", x: baseX + 18, y: baseY + pairH + 8, rotation: 0 },
-    { type: "chair", x: baseX + 62, y: baseY + pairH + 8, rotation: 0 },
-    { type: "chair", x: baseX - CHAIR_TABLE_GAP, y: baseY + 4, rotation: 90 },
-    { type: "chair", x: baseX - CHAIR_TABLE_GAP, y: baseY + 38, rotation: 90 },
-    { type: "chair", x: baseX + TABLE_W + 6, y: baseY + 4, rotation: 270 },
-    { type: "chair", x: baseX + TABLE_W + 6, y: baseY + 38, rotation: 270 },
+function boardroomTableBlock(baseX, baseY) {
+  const cols = 3;
+  const rows = 2;
+  const blockW = TABLE_W * cols;
+  const blockH = TABLE_H * rows;
+  const tables = Array.from({ length: rows }, (_, row) =>
+    Array.from({ length: cols }, (_, col) => ({
+      type: "table",
+      x: baseX + col * TABLE_W,
+      y: baseY + row * TABLE_H,
+    }))
+  ).flat();
+
+  const chairs = [
+    ...Array.from({ length: cols }, (_, col) => [
+      {
+        type: "chair",
+        x: baseX + col * TABLE_W + 18,
+        y: baseY - CHAIR_TABLE_GAP,
+        rotation: 180,
+      },
+      {
+        type: "chair",
+        x: baseX + col * TABLE_W + 62,
+        y: baseY - CHAIR_TABLE_GAP,
+        rotation: 180,
+      },
+    ]).flat(),
+    ...Array.from({ length: cols }, (_, col) => [
+      {
+        type: "chair",
+        x: baseX + col * TABLE_W + 18,
+        y: baseY + blockH + 8,
+        rotation: 0,
+      },
+      {
+        type: "chair",
+        x: baseX + col * TABLE_W + 62,
+        y: baseY + blockH + 8,
+        rotation: 0,
+      },
+    ]).flat(),
+    {
+      type: "chair",
+      x: baseX - CHAIR_TABLE_GAP,
+      y: baseY + 19,
+      rotation: 90,
+    },
+    {
+      type: "chair",
+      x: baseX - CHAIR_TABLE_GAP,
+      y: baseY + 41,
+      rotation: 90,
+    },
+    {
+      type: "chair",
+      x: baseX + blockW + 6,
+      y: baseY + 19,
+      rotation: 270,
+    },
+    {
+      type: "chair",
+      x: baseX + blockW + 6,
+      y: baseY + 41,
+      rotation: 270,
+    },
   ];
+
+  return [...tables, ...chairs];
 }
 
 const KRING_ITEMS = [
@@ -190,11 +245,7 @@ const TEMPLATES = {
   boardroom: {
     title: "Collegezaal",
     subtitle: "Vergadering",
-    expected: { tables: 12, chairs: 48 },
-    items: [
-      ...[290, 418].flatMap((baseX) =>
-        [170, 242, 314].flatMap((baseY) => boardroomStack(baseX, baseY))
-      ),
-    ],
+    expected: { tables: 6, chairs: 16 },
+    items: boardroomTableBlock(258, 240),
   },
 };
