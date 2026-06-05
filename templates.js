@@ -1,5 +1,5 @@
 // Kring:     14 tables, 19 chairs
-// Standaard: 18 tables, 33 chairs
+// Standaard: 16 tables, 29 chairs
 // Halfrond:  kring zonder onderste stoelen voor bureau — 14 tafels, 15 stoelen
 
 const TABLE_TYPES = ["table", "table-corner", "desk"];
@@ -96,7 +96,7 @@ const TEMPLATES = {
   standaard: {
     title: "Collegezaal",
     subtitle: "Standaard indeling",
-    expected: { tables: 18, chairs: 33 },
+    expected: { tables: 16, chairs: 29 },
     items: [
       { type: "table-corner", x: 108, y: 108 },
       { type: "table", x: 144, y: 108 },
@@ -112,10 +112,8 @@ const TEMPLATES = {
       { type: "table", x: 278, y: 198 },
       { type: "table", x: 406, y: 198 },
       { type: "table", x: 534, y: 198 },
-      { type: "table", x: 242, y: 198, rotation: 90 },
-      { type: "table", x: 242, y: 326, rotation: 90 },
-      { type: "table", x: 662, y: 198, rotation: 90 },
-      { type: "table", x: 662, y: 326, rotation: 90 },
+      { type: "table", x: 242, y: 234, rotation: 90 },
+      { type: "table", x: 662, y: 234, rotation: 90 },
       ...chairsBehindTableH(144, 108, "top"),
       ...chairsBehindTableH(272, 108, "top"),
       ...chairsBehindTableH(400, 108, "top"),
@@ -128,10 +126,8 @@ const TEMPLATES = {
       ...chairsBehindTableH(278, 198, "top"),
       ...chairsBehindTableH(406, 198, "top"),
       ...chairsBehindTableH(534, 198, "top"),
-      ...chairsBehindTableV(242, 198, "left"),
-      ...chairsBehindTableV(242, 326, "left"),
-      ...chairsBehindTableV(662, 198, "right"),
-      ...chairsBehindTableV(662, 326, "right"),
+      ...chairsBehindTableV(242, 234, "left"),
+      ...chairsBehindTableV(662, 234, "right"),
       { type: "chair", x: 434, y: 546, rotation: 0 },
     ],
   },
