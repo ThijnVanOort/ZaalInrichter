@@ -5,20 +5,19 @@ const ROOM = {
   height: 640,
   wall: { left: 44, top: 52, right: 856, bottom: 588 },
   doorGaps: [
-    { y1: 108, y2: 166 },
-    { y1: 348, y2: 406 },
+    { y1: 52, y2: 104 },
+    { y1: 536, y2: 588 },
   ],
   doors: [
-    { x: 0, y: 112 },
-    { x: 0, y: 352 },
+    { x: 0, y: 52 },
+    { x: 0, y: 536 },
   ],
   presentationDesk: { x: 422, y: 500 },
 };
 
 const ASSET_SIZES = {
   chair: { w: 34, h: 34, src: "assets/chair.png" },
-  "table-h": { w: 128, h: 36, src: "assets/table-h.png" },
-  "table-v": { w: 36, h: 112, src: "assets/table-v.png" },
+  table: { w: 128, h: 36, src: "assets/table-h.png" },
   "table-corner": { w: 36, h: 36, src: "assets/table-corner.png" },
   desk: { w: 56, h: 34, src: "assets/desk.png" },
   door: { w: 44, h: 52, src: "assets/door.png" },
@@ -62,6 +61,15 @@ function clampToRoom(x, y, w, h) {
 
 function getAsset(type) {
   return ASSET_SIZES[type];
+}
+
+function getEffectiveSize(type, rotation = 0) {
+  const asset = getAsset(type);
+  if (!asset) return null;
+  if (rotation === 90 || rotation === 270) {
+    return { w: asset.h, h: asset.w, src: asset.src };
+  }
+  return { w: asset.w, h: asset.h, src: asset.src };
 }
 
 function renderWalls() {
@@ -124,13 +132,17 @@ function updateCounts() {
 
 function applyVisual(item) {
   const asset = getAsset(item.type);
+  const size = getEffectiveSize(item.type, item.rotation);
   const img = item.el.querySelector("img");
-  item.el.style.width = `${asset.w}px`;
-  item.el.style.height = `${asset.h}px`;
+  item.el.style.width = `${size.w}px`;
+  item.el.style.height = `${size.h}px`;
   img.src = asset.src;
   img.width = asset.w;
   img.height = asset.h;
-  img.style.transform = `rotate(${item.rotation}deg)`;
+  img.style.position = "absolute";
+  img.style.left = "50%";
+  img.style.top = "50%";
+  img.style.transform = `translate(-50%, -50%) rotate(${item.rotation}deg)`;
   img.style.transformOrigin = "center center";
 }
 
@@ -209,8 +221,8 @@ function toggleSelection(id) {
 }
 
 function getItemBounds(item) {
-  const asset = getAsset(item.type);
-  return { x: item.x, y: item.y, w: asset.w, h: asset.h };
+  const size = getEffectiveSize(item.type, item.rotation);
+  return { x: item.x, y: item.y, w: size.w, h: size.h };
 }
 
 function rectsOverlap(a, b) {
@@ -222,7 +234,8 @@ function createItem(type, x, y, id, options = {}) {
   const asset = getAsset(type);
   if (!asset) return null;
 
-  const pos = fixed ? { x, y } : clampToRoom(snap(x), snap(y), asset.w, asset.h);
+  const size = getEffectiveSize(type, rotation);
+  const pos = fixed ? { x, y } : clampToRoom(snap(x), snap(y), size.w, size.h);
 
   const el = document.createElement("div");
   el.className = fixed ? "canvas-item fixed" : "canvas-item";
@@ -243,6 +256,7 @@ function createItem(type, x, y, id, options = {}) {
     del.type = "button";
     del.textContent = "×";
     del.title = "Verwijderen";
+    del.addEventListener("pointerdown", (e) => e.stopPropagation());
     del.addEventListener("click", (e) => {
       e.stopPropagation();
       removeItems([id]);
@@ -300,8 +314,8 @@ function canAddCornerType(type) {
 }
 
 function getItemCenter(item) {
-  const asset = getAsset(item.type);
-  return { cx: item.x + asset.w / 2, cy: item.y + asset.h / 2 };
+  const size = getEffectiveSize(item.type, item.rotation);
+  return { cx: item.x + size.w / 2, cy: item.y + size.h / 2 };
 }
 
 function getSelectionPivot(ids) {
@@ -313,11 +327,11 @@ function getSelectionPivot(ids) {
   ids.forEach((id) => {
     const item = items.find((i) => i.id === id);
     if (!item) return;
-    const asset = getAsset(item.type);
+    const size = getEffectiveSize(item.type, item.rotation);
     minX = Math.min(minX, item.x);
     minY = Math.min(minY, item.y);
-    maxX = Math.max(maxX, item.x + asset.w);
-    maxY = Math.max(maxY, item.y + asset.h);
+    maxX = Math.max(maxX, item.x + size.w);
+    maxY = Math.max(maxY, item.y + size.h);
   });
 
   return { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };
@@ -338,7 +352,7 @@ function rotateSelected() {
     const item = items.find((i) => i.id === id);
     if (!item) return;
 
-    const asset = getAsset(item.type);
+    const size = getEffectiveSize(item.type, item.rotation);
     const { cx, cy } = getItemCenter(item);
     const dx = cx - pivot.cx;
     const dy = cy - pivot.cy;
@@ -347,9 +361,9 @@ function rotateSelected() {
 
     updates.push({
       item,
-      asset,
-      rawX: newCx - asset.w / 2,
-      rawY: newCy - asset.h / 2,
+      size,
+      rawX: newCx - size.w / 2,
+      rawY: newCy - size.h / 2,
     });
   });
 
@@ -358,8 +372,8 @@ function rotateSelected() {
   const deltaX = snap(updates[0].rawX) - updates[0].rawX;
   const deltaY = snap(updates[0].rawY) - updates[0].rawY;
 
-  updates.forEach(({ item, asset, rawX, rawY }) => {
-    const pos = clampToRoom(rawX + deltaX, rawY + deltaY, asset.w, asset.h);
+  updates.forEach(({ item, size, rawX, rawY }) => {
+    const pos = clampToRoom(rawX + deltaX, rawY + deltaY, size.w, size.h);
 
     item.x = pos.x;
     item.y = pos.y;
@@ -388,12 +402,13 @@ canvas.addEventListener("drop", (e) => {
   if (!ASSET_SIZES[type] || type === "door" || type === "desk") return;
   if (!canAddCornerType(type)) return;
   const pt = getCanvasPoint(e.clientX, e.clientY);
-  const asset = ASSET_SIZES[type];
-  addItem(type, pt.x - asset.w / 2, pt.y - asset.h / 2);
+  const size = getEffectiveSize(type, 0);
+  addItem(type, pt.x - size.w / 2, pt.y - size.h / 2);
 });
 
 function onItemPointerDown(e, id) {
   if (e.button !== 0) return;
+  if (e.target.closest(".delete-btn")) return;
   const item = items.find((i) => i.id === id);
   if (!item || item.fixed) return;
 
@@ -436,13 +451,13 @@ function onItemPointerMove(e) {
   const anchor = items.find((i) => i.id === dragState.ids[0]);
   if (!anchor) return;
 
-  const asset = getAsset(anchor.type);
+  const anchorSize = getEffectiveSize(anchor.type, anchor.rotation);
   const pt = getCanvasPoint(e.clientX, e.clientY);
   const anchorPos = clampToRoom(
     snap(pt.x - dragState.offsetX),
     snap(pt.y - dragState.offsetY),
-    asset.w,
-    asset.h
+    anchorSize.w,
+    anchorSize.h
   );
 
   const start = dragState.startPositions.get(anchor.id);
@@ -452,8 +467,8 @@ function onItemPointerMove(e) {
   dragState.ids.forEach((id) => {
     const it = items.find((i) => i.id === id);
     const orig = dragState.startPositions.get(id);
-    const itAsset = getAsset(it.type);
-    const pos = clampToRoom(orig.x + dx, orig.y + dy, itAsset.w, itAsset.h);
+    const itSize = getEffectiveSize(it.type, it.rotation);
+    const pos = clampToRoom(orig.x + dx, orig.y + dy, itSize.w, itSize.h);
     it.x = pos.x;
     it.y = pos.y;
     it.el.style.left = `${it.x}px`;

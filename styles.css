@@ -340,6 +340,7 @@ button.danger:hover {
   cursor: pointer;
   display: none;
   padding: 0;
+  z-index: 5;
 }
 
 .canvas-item:hover .delete-btn,
