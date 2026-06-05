@@ -218,6 +218,11 @@ function clearSelection() {
   syncSelection();
 }
 
+function selectAll() {
+  if (items.length === 0) return;
+  setSelection(items.map((item) => item.id));
+}
+
 function setSelection(ids, additive = false) {
   if (!additive) selectedIds.clear();
   ids.forEach((id) => selectedIds.add(id));
@@ -641,6 +646,11 @@ document.addEventListener("keydown", (e) => {
   if (!modKey && !e.altKey && PALETTE_KEYS[e.key]) {
     e.preventDefault();
     placeFurniture(PALETTE_KEYS[e.key]);
+  }
+
+  if (modKey && !e.altKey && (e.key === "a" || e.key === "A")) {
+    e.preventDefault();
+    selectAll();
   }
 
   if (modKey && !e.altKey && (e.key === "d" || e.key === "D") && selectedIds.size > 0) {
