@@ -1,4 +1,5 @@
 const GRID = 10;
+const NUDGE_STEP = 5;
 
 const ROOM = {
   width: 900,
@@ -221,6 +222,22 @@ function clearSelection() {
 function selectAll() {
   if (items.length === 0) return;
   setSelection(items.map((item) => item.id));
+}
+
+function nudgeSelected(dx, dy) {
+  if (selectedIds.size === 0) return;
+
+  recordHistory();
+  [...selectedIds].forEach((id) => {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+    const size = getEffectiveSize(item.type, item.rotation);
+    const pos = clampToRoom(item.x + dx, item.y + dy, size.w, size.h);
+    item.x = pos.x;
+    item.y = pos.y;
+    item.el.style.left = `${item.x}px`;
+    item.el.style.top = `${item.y}px`;
+  });
 }
 
 function setSelection(ids, additive = false) {
@@ -640,6 +657,14 @@ document.addEventListener("keydown", (e) => {
   }
 
   if (e.key === "Escape") clearSelection();
+
+  if (selectedIds.size > 0 && e.key.startsWith("Arrow")) {
+    e.preventDefault();
+    if (e.key === "ArrowUp") nudgeSelected(0, -NUDGE_STEP);
+    else if (e.key === "ArrowDown") nudgeSelected(0, NUDGE_STEP);
+    else if (e.key === "ArrowLeft") nudgeSelected(-NUDGE_STEP, 0);
+    else if (e.key === "ArrowRight") nudgeSelected(NUDGE_STEP, 0);
+  }
 
   const modKey = e.ctrlKey || e.metaKey;
 
