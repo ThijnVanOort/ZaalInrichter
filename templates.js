@@ -45,6 +45,22 @@ function workshopTablePair(baseX, baseY) {
   ];
 }
 
+function boardroomStack(baseX, baseY) {
+  const pairH = TABLE_H * 2;
+  return [
+    { type: "table", x: baseX, y: baseY },
+    { type: "table", x: baseX, y: baseY + TABLE_H },
+    { type: "chair", x: baseX + 18, y: baseY - CHAIR_TABLE_GAP, rotation: 180 },
+    { type: "chair", x: baseX + 62, y: baseY - CHAIR_TABLE_GAP, rotation: 180 },
+    { type: "chair", x: baseX + 18, y: baseY + pairH + 8, rotation: 0 },
+    { type: "chair", x: baseX + 62, y: baseY + pairH + 8, rotation: 0 },
+    { type: "chair", x: baseX - CHAIR_TABLE_GAP, y: baseY + 4, rotation: 90 },
+    { type: "chair", x: baseX - CHAIR_TABLE_GAP, y: baseY + 38, rotation: 90 },
+    { type: "chair", x: baseX + TABLE_W + 6, y: baseY + 4, rotation: 270 },
+    { type: "chair", x: baseX + TABLE_W + 6, y: baseY + 38, rotation: 270 },
+  ];
+}
+
 const KRING_ITEMS = [
       { type: "table", x: 110, y: 60 },
       { type: "table", x: 238, y: 60 },
@@ -149,10 +165,10 @@ const TEMPLATES = {
   examen: {
     title: "Collegezaal",
     subtitle: "Examen indeling",
-    expected: { tables: 20, chairs: 20 },
+    expected: { tables: 15, chairs: 15 },
     items: [
       ...Array.from({ length: 5 }, (_, col) =>
-        Array.from({ length: 4 }, (_, row) => [
+        Array.from({ length: 3 }, (_, row) => [
           { type: "desk", x: 140 + col * 140, y: 110 + row * 120 },
           { type: "chair", x: 152 + col * 140, y: 152 + row * 120 },
         ])
@@ -174,23 +190,11 @@ const TEMPLATES = {
   boardroom: {
     title: "Collegezaal",
     subtitle: "Vergadering",
-    expected: { tables: 3, chairs: 12 },
+    expected: { tables: 12, chairs: 48 },
     items: [
-      { type: "table", x: 290, y: 280 },
-      { type: "table", x: 422, y: 280 },
-      { type: "table", x: 554, y: 280 },
-      { type: "chair", x: 300, y: 232 },
-      { type: "chair", x: 370, y: 232 },
-      { type: "chair", x: 432, y: 232 },
-      { type: "chair", x: 502, y: 232 },
-      { type: "chair", x: 564, y: 232 },
-      { type: "chair", x: 634, y: 232 },
-      { type: "chair", x: 300, y: 338 },
-      { type: "chair", x: 432, y: 338 },
-      { type: "chair", x: 564, y: 338 },
-      { type: "chair", x: 634, y: 338 },
-      { type: "chair", x: 232, y: 280 },
-      { type: "chair", x: 232, y: 318 },
+      ...[290, 418].flatMap((baseX) =>
+        [170, 242, 314].flatMap((baseY) => boardroomStack(baseX, baseY))
+      ),
     ],
   },
 };
