@@ -266,8 +266,9 @@ function createItem(type, x, y, id, options = {}) {
     del.type = "button";
     del.textContent = "×";
     del.title = "Verwijderen";
-    del.addEventListener("pointerdown", (e) => e.stopPropagation());
-    del.addEventListener("click", (e) => {
+    del.setAttribute("aria-label", "Verwijderen");
+    del.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
       e.stopPropagation();
       removeItems([id]);
     });
